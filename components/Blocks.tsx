@@ -87,13 +87,26 @@ export function Ticker({ items }: { items: Article[] }) {
   );
 }
 
-export function TrendingBar({ tags }: { tags: string[] }) {
-  if (tags.length === 0) return null;
+export function TrendingBar({
+  tags,
+  pinned = [],
+}: {
+  tags: string[];
+  pinned?: { name: string; href: string }[];
+}) {
+  if (tags.length === 0 && pinned.length === 0) return null;
   return (
     <div className="trending">
       <div className="container trending__inner">
         <span className="trending__label">Topik hangat</span>
         <ul>
+          {pinned.map((p) => (
+            <li key={p.href}>
+              <Link href={p.href} className="is-pinned">
+                {p.name}
+              </Link>
+            </li>
+          ))}
           {tags.map((t) => (
             <li key={t}>
               <Link href={`/cari?q=${encodeURIComponent(t)}`}>#{t.replace(/\s+/g, "")}</Link>

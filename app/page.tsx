@@ -2,6 +2,7 @@ import type { Article } from "@/lib/data";
 import { getCategory } from "@/lib/data";
 import { byCategory, getNews, mostRead, trendingTags } from "@/lib/news";
 import { SOURCES } from "@/lib/sources";
+import { TOPICS } from "@/lib/topics";
 import { StoryCard, StoryLead, StoryLine, StoryRow } from "@/components/Story";
 import { AdSlot, FoodPrices, MostRead, OpinionList, SectionHead, SourceList, TrendingBar } from "@/components/Blocks";
 import LatestFeed from "@/components/LatestFeed";
@@ -68,7 +69,10 @@ export default async function HomePage() {
 
   return (
     <>
-      <TrendingBar tags={trendingTags(all, isDemo)} />
+      <TrendingBar
+        tags={trendingTags(all, isDemo)}
+        pinned={TOPICS.filter((t) => t.pinned).map((t) => ({ name: t.name, href: `/topik/${t.slug}` }))}
+      />
 
       {/* 1. Headline */}
       <section className="container hero">
