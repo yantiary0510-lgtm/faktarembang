@@ -1,5 +1,6 @@
-// Konten dummy untuk keperluan desain UI.
-// Semua nama orang dan kejadian di bawah ini fiktif.
+// Tipe data, daftar rubrik, dan konten DEMO.
+// Konten demo hanya tampil kalau berita asli dari media sumber belum bisa diambil.
+// Semua nama orang dan kejadian di konten demo fiktif.
 
 export type CategorySlug =
   | "nasional"
@@ -25,6 +26,12 @@ export type Block =
   | { type: "h2"; text: string }
   | { type: "quote"; text: string; by: string };
 
+export type Source = {
+  id: string;
+  name: string;
+  home: string; // alamat beranda media sumber
+};
+
 export type Article = {
   slug: string;
   title: string;
@@ -40,6 +47,12 @@ export type Article = {
   views: number;
   tags: string[];
   body: Block[];
+  /** Isi berita dalam HTML (berita asli dari media sumber). */
+  html?: string;
+  /** URL foto asli. Kalau kosong, pakai foto placeholder dari `image`. */
+  imageUrl?: string;
+  /** Media asal berita + link tulisan aslinya. */
+  source?: Source & { link: string };
 };
 
 export const categories: Category[] = [
@@ -113,7 +126,7 @@ const P = (text: string): Block => ({ type: "p", text });
 const H = (text: string): Block => ({ type: "h2", text });
 const Q = (text: string, by: string): Block => ({ type: "quote", text, by });
 
-export const articles: Article[] = [
+export const demoArticles: Article[] = [
   {
     slug: "data-tunggal-bansos-verifikasi-ulang-penerima",
     title: "Pemerintah Pangkas Antrean Bansos Lewat Data Tunggal, 4,2 Juta Penerima Diverifikasi Ulang",
@@ -615,34 +628,9 @@ export const articles: Article[] = [
   },
 ];
 
-// ---------- helper ----------
-
 export const getCategory = (slug: string) => categories.find((c) => c.slug === slug);
 
-export const sortedArticles = () =>
-  [...articles].sort((a, b) => +new Date(b.date) - +new Date(a.date));
-
-export const byCategory = (slug: string) => sortedArticles().filter((a) => a.category === slug);
-
-export const getArticle = (slug: string) => articles.find((a) => a.slug === slug);
-
-export const mostRead = (n = 5, slug?: string) =>
-  [...articles]
-    .filter((a) => (slug ? a.category === slug : true))
-    .sort((a, b) => b.views - a.views)
-    .slice(0, n);
-
-export const related = (article: Article, n = 3) => {
-  const sameTag = sortedArticles().filter(
-    (a) => a.slug !== article.slug && a.tags.some((t) => article.tags.includes(t))
-  );
-  const sameCat = byCategory(article.category).filter(
-    (a) => a.slug !== article.slug && !sameTag.includes(a)
-  );
-  return [...sameTag, ...sameCat].slice(0, n);
-};
-
-export const trendingTags = [
+export const demoTrendingTags = [
   "Garam Rembang",
   "Batik Lasem",
   "Keamanan Siber",

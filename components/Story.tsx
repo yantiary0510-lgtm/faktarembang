@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Article } from "@/lib/data";
 import { getCategory } from "@/lib/data";
-import { img, shortStamp, TODAY } from "@/lib/format";
+import { img, shortStamp, now } from "@/lib/format";
 import { IconClock } from "./Icons";
 
 const href = (a: Article) => `/berita/${a.slug}`;
@@ -24,8 +24,9 @@ export function Meta({ article, author = false }: { article: Article; author?: b
   return (
     <div className="meta">
       {author && <span className="meta__author">{article.author}</span>}
+      {article.source && <span className="meta__source">{article.source.name}</span>}
       <time dateTime={article.date}>
-        <IconClock /> {shortStamp(article.date, TODAY)}
+        <IconClock /> {shortStamp(article.date, now())}
       </time>
     </div>
   );
@@ -44,7 +45,10 @@ export function Thumb({
 }) {
   return (
     <Link href={href(article)} className="thumb" style={{ aspectRatio: ratio }} tabIndex={-1} aria-hidden>
-      <Image src={img(article.image)} alt="" fill sizes={sizes} priority={priority} />
+      {/* Berita asli tanpa foto: tampilkan blok warna polos, bukan foto acak. */}
+      {(article.imageUrl || !article.source) && (
+        <Image src={article.imageUrl || img(article.image)} alt="" fill sizes={sizes} priority={priority} />
+      )}
     </Link>
   );
 }

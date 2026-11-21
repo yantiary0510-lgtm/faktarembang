@@ -5,10 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
 import { IconClose, IconMenu, IconSearch } from "./Icons";
-import { categories, trendingTags } from "@/lib/data";
-import { longDate, TODAY } from "@/lib/format";
+import { categories } from "@/lib/data";
+import { longDate, now } from "@/lib/format";
 
-export default function Header() {
+export default function Header({ tags = [] }: { tags?: string[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,7 +48,7 @@ export default function Header() {
     <header className="site-header">
       <div className="topbar">
         <div className="container topbar__inner">
-          <span className="topbar__date">{longDate(TODAY)}</span>
+          <span className="topbar__date">{longDate(now())}</span>
           <nav className="topbar__links" aria-label="Tautan cepat">
             <Link href="/kanal/nasional">Indeks Berita</Link>
             <a href="#redaksi">Redaksi</a>
@@ -117,14 +117,14 @@ export default function Header() {
               Cari
             </button>
           </form>
-          <div className="container searchbar__hints">
+          {tags.length > 0 && <div className="container searchbar__hints">
             <span>Sedang dicari:</span>
-            {trendingTags.slice(0, 5).map((t) => (
+            {tags.map((t) => (
               <Link key={t} href={`/cari?q=${encodeURIComponent(t)}`}>
                 {t}
               </Link>
             ))}
-          </div>
+          </div>}
         </div>
       )}
 

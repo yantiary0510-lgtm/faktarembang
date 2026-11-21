@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { sortedArticles, trendingTags } from "@/lib/data";
+import { getNews, trendingTags } from "@/lib/news";
 import { StoryRow } from "@/components/Story";
 import Link from "next/link";
 
@@ -13,8 +13,10 @@ export default async function SearchPage({ searchParams }: Props) {
   const { q = "" } = await searchParams;
   const query = norm(q);
   const words = query.split(" ").filter(Boolean);
+  const { articles, isDemo } = await getNews();
+  const tags = trendingTags(articles, isDemo);
   const results = words.length
-    ? sortedArticles().filter((a) => {
+    ? articles.filter((a) => {
         const hay = norm([a.title, a.excerpt, a.tags.join(" "), a.location].join(" "));
         return words.every((w) => hay.includes(w));
       })
@@ -50,7 +52,7 @@ export default async function SearchPage({ searchParams }: Props) {
         <div className="search-page__empty">
           {query && <p>Belum ada berita yang cocok. Coba kata kunci lain:</p>}
           <ul className="chips">
-            {trendingTags.map((t) => (
+            {tags.map((t) => (
               <li key={t}>
                 <Link href={`/cari?q=${encodeURIComponent(t)}`}>{t}</Link>
               </li>

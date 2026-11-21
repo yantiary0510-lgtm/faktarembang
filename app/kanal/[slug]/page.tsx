@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { byCategory, categories, getCategory, mostRead, sortedArticles } from "@/lib/data";
+import { categories, getCategory } from "@/lib/data";
+import { byCategory, getNews, mostRead } from "@/lib/news";
 import { StoryCard, StoryLead, StoryLine, StoryRow } from "@/components/Story";
 import { AdSlot, MostRead, SectionHead } from "@/components/Blocks";
 import Newsletter from "@/components/Newsletter";
+
+export const revalidate = 600;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -24,14 +27,13 @@ export default async function CategoryPage({ params }: Props) {
   const cat = getCategory(slug);
   if (!cat) notFound();
 
-  const list = byCategory(cat.slug);
+  const { articles: all } = await getNews();
+  const list = byCategory(all, cat.slug);
   const [lead, ...rest] = list;
   const side = rest.slice(0, 2);
-  const more = rest.slice(2);
-  const elsewhere = sortedArticles()
-    .filter((a) => a.category !== cat.slug)
-    .slice(0, 6);
-  const popular = mostRead(5, cat.slug);
+  const more = rest.slice(2, 40);
+  const elsewhere = all.filter((a) => a.category !== cat.slug).slice(0, 6);
+  const popular = mostRead(list, 5);
 
   return (
     <div style={{ "--cat": cat.color } as React.CSSProperties}>
@@ -81,14 +83,16 @@ export default async function CategoryPage({ params }: Props) {
                 </>
               )}
 
-              <div className={`also ${more.length === 0 ? "also--first" : ""}`}>
-                <SectionHead title="Dari Rubrik Lain" />
-                <div className="also__grid">
-                  {elsewhere.map((a) => (
-                    <StoryLine key={a.slug} article={a} />
-                  ))}
+              {elsewhere.length > 0 && (
+                <div className={`also ${more.length === 0 ? "also--first" : ""}`}>
+                  <SectionHead title="Dari Rubrik Lain" />
+                  <div className="also__grid">
+                    {elsewhere.map((a) => (
+                      <StoryLine key={a.slug} article={a} />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <aside className="rail">
               <MostRead items={popular} title={`Terpopuler di ${cat.short}`} />
@@ -98,7 +102,19 @@ export default async function CategoryPage({ params }: Props) {
           </section>
         </>
       ) : (
-        <p className="container empty">Belum ada berita di rubrik ini.</p>
+        <section className="container with-rail">
+          <div>
+            <p className="empty">Belum ada berita di rubrik ini. Simak berita terbaru dari rubrik lain:</p>
+            <div className="also__grid">
+              {elsewhere.map((a) => (
+                <StoryLine key={a.slug} article={a} />
+              ))}
+            </div>
+          </div>
+          <aside className="rail">
+            <Newsletter />
+          </aside>
+        </section>
       )}
     </div>
   );

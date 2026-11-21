@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Article } from "@/lib/data";
-import { articles, foodPrices, getCategory, sortedArticles, trendingTags } from "@/lib/data";
+import { foodPrices, getCategory } from "@/lib/data";
 import { rupiah, time, views, initials } from "@/lib/format";
 import { IconArrow, IconEye } from "./Icons";
 
@@ -31,6 +31,7 @@ export function SectionHead({
 }
 
 export function MostRead({ items, title = "Terpopuler" }: { items: Article[]; title?: string }) {
+  if (items.length === 0) return null;
   return (
     <section className="mostread" aria-label={title}>
       <SectionHead title={title} color="var(--red)" />
@@ -43,7 +44,13 @@ export function MostRead({ items, title = "Terpopuler" }: { items: Article[]; ti
                 {a.title}
               </Link>
               <span className="mostread__views">
-                <IconEye /> {views(a.views)} pembaca
+                {a.views > 0 ? (
+                  <>
+                    <IconEye /> {views(a.views)} pembaca
+                  </>
+                ) : (
+                  a.source?.name ?? ""
+                )}
               </span>
             </div>
           </li>
@@ -53,8 +60,8 @@ export function MostRead({ items, title = "Terpopuler" }: { items: Article[]; ti
   );
 }
 
-export function Ticker() {
-  const items = sortedArticles().slice(0, 8);
+export function Ticker({ items }: { items: Article[] }) {
+  if (items.length === 0) return null;
   // Diduplikasi supaya animasi berjalan tanpa jeda.
   const loop = [...items, ...items];
   return (
@@ -80,13 +87,14 @@ export function Ticker() {
   );
 }
 
-export function TrendingBar() {
+export function TrendingBar({ tags }: { tags: string[] }) {
+  if (tags.length === 0) return null;
   return (
     <div className="trending">
       <div className="container trending__inner">
         <span className="trending__label">Topik hangat</span>
         <ul>
-          {trendingTags.map((t) => (
+          {tags.map((t) => (
             <li key={t}>
               <Link href={`/cari?q=${encodeURIComponent(t)}`}>#{t.replace(/\s+/g, "")}</Link>
             </li>
@@ -97,6 +105,7 @@ export function TrendingBar() {
   );
 }
 
+/** Widget contoh. Hanya tampil di mode demo (angkanya bukan data asli). */
 export function FoodPrices() {
   return (
     <section className="prices" aria-label="Harga pangan">
@@ -128,13 +137,13 @@ export function FoodPrices() {
   );
 }
 
-export function OpinionList() {
-  const ops = articles.filter((a) => a.category === "opini");
+export function OpinionList({ items }: { items: Article[] }) {
+  if (items.length === 0) return null;
   const cat = getCategory("opini")!;
   return (
     <section className="opinion">
       <SectionHead title="Opini" color={cat.color} href="/kanal/opini" />
-      {ops.map((a) => (
+      {items.slice(0, 4).map((a) => (
         <article key={a.slug} className="opinion__item">
           <span className="avatar" aria-hidden>
             {initials(a.author)}
@@ -147,6 +156,26 @@ export function OpinionList() {
           </div>
         </article>
       ))}
+    </section>
+  );
+}
+
+/** Daftar media sumber, untuk sidebar. */
+export function SourceList({ sources }: { sources: { name: string; home: string; count: number }[] }) {
+  if (sources.length === 0) return null;
+  return (
+    <section className="sources">
+      <SectionHead title="Jaringan Media" />
+      <ul>
+        {sources.map((s) => (
+          <li key={s.name}>
+            <a href={s.home} target="_blank" rel="noopener">
+              {s.name}
+            </a>
+            <span>{s.count} berita</span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

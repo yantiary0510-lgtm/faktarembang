@@ -640,6 +640,14 @@ ol {
   align-items: center;
   gap: 5px;
 }
+.meta__source {
+  font-family: var(--cond);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-2);
+}
 .meta__author {
   font-weight: 600;
   color: var(--ink-2);
@@ -1004,6 +1012,9 @@ ol {
   grid-template-columns: minmax(0, 5fr) minmax(0, 4.2fr) minmax(0, 3.3fr);
   gap: 32px;
 }
+.local__grid--no-aside {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+}
 .local__lead .story__title {
   font-size: 26px;
   line-height: 1.15;
@@ -1170,6 +1181,114 @@ ol {
   color: var(--red-dark);
 }
 
+/* jaringan media */
+.sources ul {
+  border-top: 0;
+}
+.sources li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.sources li a {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+}
+.sources li a:hover {
+  color: var(--red-dark);
+}
+.sources li span {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* sumber berita di halaman artikel */
+.source-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 26px;
+  padding: 14px 16px;
+  background: var(--cream);
+  border-left: 3px solid var(--cat);
+  font-size: 14px;
+}
+.source-note strong {
+  font-family: var(--cond);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.source-note a {
+  color: var(--red);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* isi HTML dari media sumber */
+.prose img,
+.prose figure {
+  max-width: 100%;
+  height: auto;
+  margin: 1.4em 0;
+}
+.prose figure img {
+  margin: 0;
+}
+.prose figcaption,
+.prose .wp-caption-text {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.prose a {
+  color: var(--red-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose ul,
+.prose ol {
+  margin: 0 0 1.15em;
+  padding-left: 1.3em;
+  list-style: revert;
+}
+.prose li {
+  margin-bottom: 0.4em;
+}
+.prose h3,
+.prose h4 {
+  margin: 1.4em 0 0.5em;
+  font-family: var(--cond);
+  font-size: 21px;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.prose iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
+  margin: 1.2em 0;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sans);
+  font-size: 15px;
+  margin: 1.2em 0;
+}
+.prose td,
+.prose th {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+}
+
 /* newsletter */
 .newsletter {
   background: var(--red);
@@ -1243,6 +1362,12 @@ ol {
 /* rubrik */
 .rubrics {
   gap: 0;
+}
+.rubrics--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.rubrics--1 {
+  grid-template-columns: minmax(0, 1fr);
 }
 .rubric {
   padding: 0 28px;
@@ -1607,6 +1732,10 @@ ol {
   line-height: 1.35;
   color: var(--ink);
 }
+.prose .alsoread a {
+  text-decoration: none;
+  font-family: var(--serif);
+}
 .alsoread a:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -1884,6 +2013,9 @@ main > :last-child.weekend {
    Responsif
    ========================================================== */
 @media (max-width: 1180px) {
+  .local__grid--no-aside {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
   .hero {
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   }
@@ -2209,7 +2341,10 @@ main > :last-child.weekend {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
-  .local__lead .story__title {
+  .local__grid--no-aside {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+}
+.local__lead .story__title {
     font-size: 22px;
   }
   .prices__table tbody {

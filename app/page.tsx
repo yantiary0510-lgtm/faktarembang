@@ -1,57 +1,79 @@
-import { articles, byCategory, getArticle, getCategory, mostRead, sortedArticles } from "@/lib/data";
+import type { Article } from "@/lib/data";
+import { getCategory } from "@/lib/data";
+import { byCategory, getNews, mostRead, trendingTags } from "@/lib/news";
+import { SOURCES } from "@/lib/sources";
 import { StoryCard, StoryLead, StoryLine, StoryRow } from "@/components/Story";
-import { AdSlot, FoodPrices, MostRead, OpinionList, SectionHead, TrendingBar } from "@/components/Blocks";
+import { AdSlot, FoodPrices, MostRead, OpinionList, SectionHead, SourceList, TrendingBar } from "@/components/Blocks";
 import LatestFeed from "@/components/LatestFeed";
 import Newsletter from "@/components/Newsletter";
 
-const pick = (slugs: string[]) => slugs.map((s) => getArticle(s)!).filter(Boolean);
+// Perbarui beranda tiap 10 menit (samakan dengan REFRESH_SECONDS di lib/sources.ts).
+export const revalidate = 600;
 
-export default function HomePage() {
-  const lead = getArticle("data-tunggal-bansos-verifikasi-ulang-penerima")!;
-  const second = pick(["pengerukan-pelabuhan-tasikagung-dimulai", "phishing-undangan-pernikahan-digital-marak"]);
-  const heroSlugs = [lead, ...second].map((a) => a.slug);
+/** Ambil n berita dari pool yang belum dipakai di bagian lain beranda. */
+function taker(all: Article[]) {
+  const used = new Set<string>();
+  return (pool: Article[], n: number, needImage = false) => {
+    const out: Article[] = [];
+    for (const a of pool) {
+      if (out.length >= n) break;
+      if (used.has(a.slug)) continue;
+      if (needImage && !a.imageUrl && !a.image) continue;
+      used.add(a.slug);
+      out.push(a);
+    }
+    return out;
+  };
+}
 
-  const editors = pick([
-    "harga-garam-rakyat-anjlok-petambak-kaliori",
-    "seleksi-cpns-2026-dibuka-akhir-november",
-    "bmkg-pesisir-utara-jawa-siaga-rob",
-    "asean-sepakati-pembayaran-qr-lintas-negara",
-  ]);
+export default async function HomePage() {
+  const { articles: all, isDemo } = await getNews();
+  const take = taker(all);
+  const news = all.filter((a) => a.category !== "opini");
+  const withImg = news.filter((a) => a.imageUrl || isDemo);
 
-  const local = sortedArticles().filter(
-    (a) =>
-      ["REMBANG", "LASEM", "SARANG", "SULANG"].includes(a.location) &&
-      !heroSlugs.includes(a.slug) &&
-      !editors.includes(a) &&
-      a.category !== "opini"
+  const [lead] = take(withImg, 1);
+  const second = take(withImg, 2);
+
+  // Blok Rembang & Jateng diisi dulu supaya tidak kehabisan berita.
+  const localCat = getCategory("rembang")!;
+  const local = take(byCategory(news, "rembang"), 5);
+  const [localLead, ...localList] = local;
+
+  const editors = take(withImg, 4);
+  const leadRelated = take(news, 2);
+
+  const rubrics = (["ekonomi", "olahraga", "tekno"] as const)
+    .map((slug) => ({ cat: getCategory(slug)!, items: take(byCategory(news, slug), 4) }))
+    .filter((r) => r.items.length > 0);
+
+  const weekend = take(
+    news.filter((a) => a.category === "gaya-hidup" || a.category === "olahraga" || a.category === "internasional"),
+    4,
+    true
   );
-  const localLead = getArticle("festival-batik-lasem-2026")!;
-  const localList = local.filter((a) => a.slug !== localLead.slug).slice(0, 4);
 
-  const latest = sortedArticles().filter(
-    (a) => !heroSlugs.includes(a.slug) && !editors.includes(a) && a.category !== "opini"
-  );
+  const popular = mostRead(all, 5);
+  const latest = news.filter((a) => a.slug !== lead?.slug && !second.includes(a));
+  const opinions = byCategory(all, "opini");
 
-  const rubrics = (["ekonomi", "olahraga", "tekno"] as const).map((slug) => ({
-    cat: getCategory(slug)!,
-    items: byCategory(slug).filter((a) => !heroSlugs.includes(a.slug) && !localList.includes(a)),
-  }));
+  const sourceStats = isDemo
+    ? []
+    : SOURCES.filter((s) => s.enabled)
+        .map((s) => ({ name: s.name, home: s.home, count: all.filter((a) => a.source?.id === s.id).length }))
+        .filter((s) => s.count > 0);
 
-  const weekend = pick([
-    "pantai-rembang-libur-akhir-tahun",
-    "lontong-tuyuhan-kuliner-pancur",
-    "lari-10k-pesisir-rembang",
-    "jepang-longgarkan-visa-pekerja-terampil",
-  ]);
+
+  if (!lead) return <p className="container empty">Belum ada berita.</p>;
 
   return (
     <>
-      <TrendingBar />
+      <TrendingBar tags={trendingTags(all, isDemo)} />
 
       {/* 1. Headline */}
       <section className="container hero">
         <div className="hero__lead">
-          <StoryLead article={lead} related={pick(["seleksi-cpns-2026-dibuka-akhir-november", "mudik-nataru-tol-trans-jawa"])} />
+          <StoryLead article={lead} related={leadRelated} />
         </div>
         <div className="hero__side">
           {second.map((a) => (
@@ -59,49 +81,51 @@ export default function HomePage() {
           ))}
         </div>
         <aside className="hero__rail">
-          <MostRead items={mostRead(5)} />
+          <MostRead items={popular} title={isDemo ? "Terpopuler" : "Pilihan Hari Ini"} />
         </aside>
       </section>
 
       {/* 2. Pilihan redaksi */}
-      <section className="container block">
-        <SectionHead title="Pilihan Redaksi" />
-        <div className="grid-4">
-          {editors.map((a) => (
-            <StoryCard key={a.slug} article={a} />
-          ))}
-        </div>
-      </section>
+      {editors.length > 0 && (
+        <section className="container block">
+          <SectionHead title="Pilihan Redaksi" />
+          <div className="grid-4">
+            {editors.map((a) => (
+              <StoryCard key={a.slug} article={a} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 3. Rembang & Jateng */}
-      <section className="local">
-        <div className="container">
-          <SectionHead
-            title="Rembang & Jateng"
-            color={getCategory("rembang")!.color}
-            href="/kanal/rembang"
-          >
-            <ul className="section-head__tabs" aria-label="Sub-topik">
-              {getCategory("rembang")!.topics.slice(0, 4).map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-          </SectionHead>
-          <div className="local__grid">
-            <div className="local__lead">
-              <StoryCard article={localLead} excerpt ratio="16/9" />
+      {localLead && (
+        <section className="local">
+          <div className="container">
+            <SectionHead title={localCat.name} color={localCat.color} href="/kanal/rembang">
+              <ul className="section-head__tabs" aria-label="Sub-topik">
+                {localCat.topics.slice(0, 4).map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+            </SectionHead>
+            <div className={`local__grid ${isDemo ? "" : "local__grid--no-aside"}`}>
+              <div className="local__lead">
+                <StoryCard article={localLead} excerpt ratio="16/9" />
+              </div>
+              <div className="local__list">
+                {localList.map((a) => (
+                  <StoryRow key={a.slug} article={a} />
+                ))}
+              </div>
+              {isDemo && (
+                <aside className="local__aside">
+                  <FoodPrices />
+                </aside>
+              )}
             </div>
-            <div className="local__list">
-              {localList.map((a) => (
-                <StoryRow key={a.slug} article={a} />
-              ))}
-            </div>
-            <aside className="local__aside">
-              <FoodPrices />
-            </aside>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <div className="container">
         <AdSlot />
@@ -114,42 +138,45 @@ export default function HomePage() {
           <LatestFeed items={latest} />
         </div>
         <aside className="rail">
-          <OpinionList />
+          <SourceList sources={sourceStats} />
+          <OpinionList items={opinions} />
           <Newsletter />
           <AdSlot size="box" />
         </aside>
       </section>
 
       {/* 5. Rubrik */}
-      <section className="container block">
-        <div className="grid-3 rubrics">
-          {rubrics.map(({ cat, items }) => (
-            <div key={cat.slug} className="rubric">
-              <SectionHead title={cat.name} color={cat.color} href={`/kanal/${cat.slug}`} />
-              {items[0] && <StoryCard article={items[0]} excerpt />}
-              <div className="rubric__lines">
-                {items.slice(1, 4).map((a) => (
-                  <StoryLine key={a.slug} article={a} showKicker={false} />
-                ))}
+      {rubrics.length > 0 && (
+        <section className="container block">
+          <div className={`grid-3 rubrics rubrics--${rubrics.length}`}>
+            {rubrics.map(({ cat, items }) => (
+              <div key={cat.slug} className="rubric">
+                <SectionHead title={cat.name} color={cat.color} href={`/kanal/${cat.slug}`} />
+                <StoryCard article={items[0]} excerpt />
+                <div className="rubric__lines">
+                  {items.slice(1, 4).map((a) => (
+                    <StoryLine key={a.slug} article={a} showKicker={false} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 6. Akhir pekan */}
-      <section className="weekend">
-        <div className="container">
-          <SectionHead title="Bekal Akhir Pekan" color="var(--ochre-light)" />
-          <div className="grid-4">
-            {weekend.map((a) => (
-              <StoryCard key={a.slug} article={a} ratio="4/5" />
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <p className="sr-only">Total {articles.length} berita.</p>
+      {/* 6. Akhir pekan */}
+      {weekend.length >= 4 && (
+        <section className="weekend">
+          <div className="container">
+            <SectionHead title="Bekal Akhir Pekan" color="var(--ochre-light)" />
+            <div className="grid-4">
+              {weekend.map((a) => (
+                <StoryCard key={a.slug} article={a} ratio="4/5" />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

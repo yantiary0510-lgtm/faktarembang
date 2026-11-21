@@ -2,7 +2,7 @@ import Link from "next/link";
 import Logo from "./Logo";
 import { categories } from "@/lib/data";
 
-export default function Footer() {
+export default function Footer({ isDemo = false }: { isDemo?: boolean }) {
   return (
     <footer className="footer">
       <div className="container footer__top">
@@ -56,7 +56,11 @@ export default function Footer() {
       <div className="footer__bottom">
         <div className="container footer__bottom-inner">
           <span>© 2026 faktarembang. Hak cipta dilindungi.</span>
-          <span>Konten dalam purwarupa ini fiktif, untuk kebutuhan desain.</span>
+          {isDemo ? (
+            <span>Konten yang tampil saat ini adalah contoh (fiktif), untuk kebutuhan desain.</span>
+          ) : (
+            <span>Berita dari jaringan media faktarembang. Setiap berita mencantumkan media asalnya.</span>
+          )}
         </div>
       </div>
     </footer>

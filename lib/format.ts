@@ -71,5 +71,5 @@ export const initials = (name: string) =>
 export const img = (seed: string, w = 1200, h = 750) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
-/** Tanggal acuan "hari ini" untuk konten dummy. */
-export const TODAY = "2026-11-09T15:00:00+07:00";
+/** Waktu sekarang (dipakai untuk tanggal di topbar dan label jam). */
+export const now = () => new Date().toISOString();
