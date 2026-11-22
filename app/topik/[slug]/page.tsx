@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getNews } from "@/lib/news";
-import { TOPICS, articlesForTopic, getTopic } from "@/lib/topics";
+import { TOPICS, articlesForTopic, externalForTopic, getTopic } from "@/lib/topics";
+import { dateTime } from "@/lib/format";
+import { IconArrow } from "@/components/Icons";
 import { StoryLead, StoryRow, StoryLine } from "@/components/Story";
 import { AdSlot, SectionHead } from "@/components/Blocks";
 import Newsletter from "@/components/Newsletter";
@@ -27,7 +29,7 @@ export default async function TopicPage({ params }: Props) {
   const topic = getTopic(slug);
   if (!topic) notFound();
 
-  const { articles: all } = await getNews();
+  const [{ articles: all }, external] = await Promise.all([getNews(), externalForTopic(topic)]);
   const list = articlesForTopic(all, topic);
   const [lead, ...rest] = list;
   const latest = all.filter((a) => !list.includes(a)).slice(0, 6);
@@ -46,7 +48,7 @@ export default async function TopicPage({ params }: Props) {
             <p className="cat-head__desc">{topic.description}</p>
           </div>
           <p className="topic-count">
-            <strong>{list.length}</strong> berita
+            <strong>{list.length + external.length}</strong> berita
             {topic.disclosure && <span className="topic-disclosure">{topic.disclosure}</span>}
           </p>
         </div>
@@ -71,18 +73,45 @@ export default async function TopicPage({ params }: Props) {
               )}
             </>
           ) : (
-            <div className="topic-empty">
-              <h2>Belum ada berita tentang {topic.name}.</h2>
-              <p>
-                Halaman ini terisi otomatis begitu media di jaringan faktarembang menerbitkan berita yang menyebut{" "}
-                {topic.keywords.map((k, i) => (
-                  <span key={k}>
-                    {i > 0 && " atau "}“{k}”
-                  </span>
-                ))}
-                .
+            external.length === 0 && (
+              <div className="topic-empty">
+                <h2>Belum ada berita tentang {topic.name}.</h2>
+                <p>
+                  Halaman ini terisi otomatis begitu ada berita yang menyebut{" "}
+                  {topic.keywords.map((k, i) => (
+                    <span key={k}>
+                      {i > 0 && " atau "}“{k}”
+                    </span>
+                  ))}
+                  .
+                </p>
+              </div>
+            )
+          )}
+
+          {external.length > 0 && (
+            <section className={`external ${lead ? "" : "external--first"}`}>
+              <SectionHead title="Diberitakan Media Lain" color={color} />
+              <p className="external__note">
+                Tautan menuju berita asli di masing-masing media. Diperbarui otomatis.
               </p>
-            </div>
+              <ol className="external__list">
+                {external.map((x) => (
+                  <li key={x.link}>
+                    <a href={x.link} target="_blank" rel="noopener nofollow" className="external__item">
+                      <span className="external__meta">
+                        <strong>{x.source}</strong>
+                        {x.date && <time dateTime={x.date}>{dateTime(x.date)}</time>}
+                      </span>
+                      <span className="external__title">{x.title}</span>
+                      <span className="external__go">
+                        Baca di {x.source} <IconArrow size={13} />
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </section>
           )}
         </div>
         <aside className="rail">
